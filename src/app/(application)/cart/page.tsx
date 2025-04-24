@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Axios } from "@/config/axios";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import PaymentDialog from "@/components/modal/payment-dialog";
 
 // Define interfaces for API responses
 interface Product {
@@ -89,8 +90,57 @@ const BillDetailsSkeleton = () => (
   </div>
 );
 
+// Types for API responses
+interface OrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  productName: string;
+  price: string;
+  quantity: number;
+}
+
+interface OrderResponse {
+  success: boolean;
+  data?: {
+    order: {
+      id: string;
+      orderNumber: string;
+      tokenNumber: string;
+      total: string;
+      status: string;
+      createdAt: string;
+    };
+    items: OrderItem[];
+  };
+  error?: string;
+  message?: string;
+}
+
+interface PaymentData {
+  id: string;
+  orderId: string;
+  amount: string;
+  method: string;
+  status: string;
+  createdAt: string;
+}
+
+interface PaymentResponse {
+  success: boolean;
+  data?: PaymentData;
+  error?: string;
+  message?: string;
+}
+
 export default function CartPage() {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  const [orderData, setOrderData] = useState<{
+    orderNumber: string;
+    tokenNumber: string;
+    total: number;
+  } | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -178,8 +228,64 @@ export default function CartPage() {
     }
   };
 
-  const handleCheckout = () => {
-    router.push("/payment");
+  const handleProcessPayment = async () => {
+    try {
+      setLoading(true);
+
+      // Step 1: Create the order
+      const orderResponse = await Axios.post<OrderResponse>(
+        "/api/orders/create"
+      );
+
+      if (!orderResponse.data.success) {
+        toast.error(orderResponse.data.error || "Failed to create order");
+        return;
+      }
+
+      const orderInfo = orderResponse.data.data?.order;
+
+      if (!orderInfo) {
+        toast.error("Order data is missing");
+        return;
+      }
+
+      // Step 2: Process payment for the created order
+      const paymentResponse = await Axios.post<PaymentResponse>(
+        "/api/payments",
+        {
+          orderId: orderInfo.id,
+          method: "UPI", // Default payment method
+        }
+      );
+
+      if (!paymentResponse.data.success) {
+        toast.error(paymentResponse.data.error || "Payment processing failed");
+        return;
+      }
+
+      // Step 3: Set order data for the success dialog
+      setOrderData({
+        orderNumber: orderInfo.orderNumber,
+        tokenNumber: orderInfo.tokenNumber.replace("#", ""), // Remove # if present
+        total: Number(orderInfo.total),
+      });
+
+      // Show success dialog
+      setIsOpen(true);
+      // toast.success("Payment completed successfully!");
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      toast.error("An error occurred during payment processing");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle dialog close
+  const handleDialogClose = () => {
+    setIsOpen(false);
+    // Navigate back to home page after payment
+    router.push("/");
   };
 
   return (
@@ -243,7 +349,7 @@ export default function CartPage() {
                           </Typography>
                           <Typography
                             variant="Regular_H6"
-                            className="text-muted-foreground truncate"
+                            className="text-muted-foreground max-w-[220px] truncate"
                           >
                             {item.product.description}
                           </Typography>
@@ -341,7 +447,7 @@ export default function CartPage() {
       {/* Checkout Button */}
       <div className="sticky bottom-5 z-50 px-4">
         <Button
-          onClick={handleCheckout}
+          onClick={handleProcessPayment}
           className="w-full h-12 text-lg"
           disabled={loading || cartItems.length === 0}
         >
@@ -352,6 +458,17 @@ export default function CartPage() {
           )}
         </Button>
       </div>
+
+      {orderData && (
+        <PaymentDialog
+          setClose={handleDialogClose}
+          open={isOpen}
+          userName="Customer"
+          tokenNumber={orderData.tokenNumber}
+          orderNumber={orderData.orderNumber}
+          totalAmount={orderData.total}
+        />
+      )}
     </div>
   );
 }

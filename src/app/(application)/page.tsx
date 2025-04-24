@@ -10,10 +10,9 @@ import { useEffect, useState, useCallback } from "react";
 import { Axios } from "@/config/axios";
 import { StaticImageData } from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
-import { X } from "lucide-react";
 
 // Sample quick search terms (will be replaced with actual top products)
-const quickSearchTerms = ["Dosa", "Product Name"];
+const quickSearchTerms = ["Chole Bhature", "Idli Sambar", "Paneer Tikka"];
 
 interface Product {
   id: string;
@@ -185,6 +184,13 @@ const HomePage = () => {
               <QuickSearchSkeleton />
             ) : (
               <div className="flex gap-2 pb-2 px-4">
+                <Button
+                  variant={!searchTerm ? "default" : "outline"}
+                  className="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap"
+                  onClick={clearSearch}
+                >
+                  All
+                </Button>
                 {topSearchItems.map((term) => (
                   <Button
                     key={term}
@@ -195,34 +201,8 @@ const HomePage = () => {
                     onClick={() => handleQuickSearch(term)}
                   >
                     {term}
-                    {term === searchTerm && (
-                      <span
-                        className="inline-flex ml-2 bg-primary-foreground rounded-full p-1 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          clearSearch();
-                        }}
-                      >
-                        <X size={12} className="text-primary" />
-                      </span>
-                    )}
                   </Button>
                 ))}
-
-                {searchTerm && !topSearchItems.includes(searchTerm) && (
-                  <Button
-                    variant="default"
-                    className="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap pr-2"
-                  >
-                    {searchTerm}
-                    <span
-                      className="inline-flex ml-2 bg-primary-foreground rounded-full p-1 cursor-pointer"
-                      onClick={clearSearch}
-                    >
-                      <X size={12} className="text-primary" />
-                    </span>
-                  </Button>
-                )}
               </div>
             )}
             <ScrollBar orientation="horizontal" />

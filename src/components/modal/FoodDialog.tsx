@@ -55,7 +55,7 @@ export const FoodDialog = ({
       });
 
       if (response.data.success) {
-        toast.success(response.data.message || "Item added to cart");
+        toast.success(`${quantity}x ${name} added to cart`);
         onClose();
       } else {
         toast.error(response.data.error || "Failed to add item to cart");
@@ -70,7 +70,7 @@ export const FoodDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="!max-w-[340px] !p-0 border-none rounded-xl -mx-2">
+      <DialogContent className="!max-w-[340px] !p-0 border-none rounded-xl ">
         <DialogHeader>
           <div className="relative w-full h-52 overflow-hidden rounded-t-xl">
             <Image src={imageSrc} alt={name} fill className="object-cover " />
@@ -80,20 +80,22 @@ export const FoodDialog = ({
             </div>
           </div>
           <div className="px-4">
-            <DialogTitle className="text-xl mt-2">{name}</DialogTitle>
-            <DialogDescription className="text-sm">
+            <DialogTitle className="text-start text-xl mt-2">
+              {name}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-start">
               {description}
             </DialogDescription>
             <Typography
               variant="SemiBold_H5"
-              className="mt-4 block text-primary"
+              className="text-start mt-4 block text-primary"
             >
               ₹{price * quantity}
             </Typography>
             <div className="mt-6">
               <Typography
                 variant="Regular_H6"
-                className="text-muted-foreground"
+                className="text-muted-foreground text-start"
               >
                 {about
                   ? about
@@ -103,7 +105,7 @@ export const FoodDialog = ({
           </div>
         </DialogHeader>
 
-        <DialogFooter className="flex justify-between items-center gap-4 p-4">
+        <DialogFooter className="flex flex-row justify-between items-center gap-4 p-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center border rounded-md">
               <Button
